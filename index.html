@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Star-X VTOL-4910HP 양항비 비교 시뮬레이터</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./node_modules/three/build/three.module.js",
+          "three/addons/": "./node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main id="app">
+      <div id="scene-root" aria-label="대한민국 3D 비행 시뮬레이션"></div>
+
+      <div id="hud">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Star-X VTOL-4910HP · XFOIL L/D Data</p>
+            <h1>양항비 데이터 기반 비교 시뮬레이터</h1>
+          </div>
+          <div class="top-metrics" aria-live="polite">
+            <div>
+              <span>Baseline Range</span>
+              <strong id="topBaseline">200 km</strong>
+            </div>
+            <div>
+              <span>Optimized Range</span>
+              <strong id="topOptimized">239 km</strong>
+            </div>
+            <div>
+              <span>L/D Gain</span>
+              <strong id="topGain">+19.3%</strong>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="icon-button" id="playToggle" type="button" aria-label="일시정지" title="일시정지">
+              <span id="playIcon">&#10074;&#10074;</span>
+            </button>
+            <button class="icon-button" id="resetSim" type="button" aria-label="시뮬레이션 재시작" title="시뮬레이션 재시작">
+              &#8635;
+            </button>
+            <button class="icon-button" id="resetView" type="button" aria-label="카메라 초기화" title="카메라 초기화">
+              &#9673;
+            </button>
+          </div>
+        </header>
+
+        <section class="panel control-panel" aria-label="기체 제원과 시뮬레이션 입력값">
+          <div class="panel-heading">
+            <h2 id="aircraftName">Star-X VTOL-4910HP</h2>
+            <span id="simStatus">비행 중</span>
+          </div>
+
+          <div class="spec-grid" aria-label="공식 항공기 제원">
+            <div>
+              <span>비행/항속 거리</span>
+              <strong id="specRange">~200 km</strong>
+            </div>
+            <div>
+              <span>순항 / 최고 속도</span>
+              <strong id="specCruise">80-110 / 130 km/h</strong>
+            </div>
+            <div>
+              <span>MTOW</span>
+              <strong id="specMtow">64 kg</strong>
+            </div>
+            <div>
+              <span>최대 Endurance</span>
+              <strong id="specEndurance">12 h 00 m</strong>
+            </div>
+            <div>
+              <span>Payload</span>
+              <strong id="specPayload">5-20 kg</strong>
+            </div>
+            <div>
+              <span>기체 크기</span>
+              <strong id="specSize">W 4.91 m / L 2.84 m</strong>
+            </div>
+            <div class="wide-spec">
+              <span>추진 방식</span>
+              <strong id="specPropulsion">120-170cc EFI / 중유 엔진</strong>
+            </div>
+          </div>
+
+          <div class="comparison-callout">
+            <strong id="deltaRange">+39 km</strong>
+            <span id="deltaEndurance">Endurance +2 h 19 m</span>
+          </div>
+
+          <label class="field">
+            <span>엑셀 기반 양항비 개선율</span>
+            <div class="input-row">
+              <input id="gainRange" type="range" min="0" max="50" step="0.1" value="19.3" />
+              <input id="gainNumber" type="number" min="0" max="50" step="0.1" value="19.3" />
+              <em>%</em>
+            </div>
+          </label>
+
+          <label class="field">
+            <span>시뮬레이션 속도</span>
+            <div class="input-row">
+              <input id="speedRange" type="range" min="0.4" max="2.5" step="0.1" value="1" />
+              <strong id="speedReadout">1.0x</strong>
+            </div>
+          </label>
+
+          <div class="switches">
+            <label>
+              <input id="cameraFollow" type="checkbox" checked />
+              <span>카메라 추적</span>
+            </label>
+            <label>
+              <input id="showAirfoil" type="checkbox" />
+              <span>3D 단면</span>
+            </label>
+          </div>
+
+          <p class="source-note" id="modelNote">
+            Star-X VTOL-4910HP 첨부 재원표와 엑셀 최대 L/D를 사용했습니다. 항속거리와 체공시간이 L/D 개선율에 비례한다고 가정한 비교입니다.
+          </p>
+        </section>
+
+        <section class="panel airfoil-panel" aria-label="양항비 극선 비교">
+          <div class="panel-heading">
+            <h2>AoA-L/D 곡선</h2>
+            <span>Excel Data</span>
+          </div>
+          <svg id="airfoilSvg" viewBox="0 0 360 190" role="img" aria-label="Baseline과 최적화 양항비 극선 비교"></svg>
+          <div class="legend">
+            <span><i class="baseline-swatch"></i>Baseline L/D</span>
+            <span><i class="optimized-swatch"></i>Optimized L/D</span>
+          </div>
+        </section>
+
+        <section class="panel telemetry-strip" aria-label="항속거리 비교">
+          <div class="telemetry-row baseline-row">
+            <div class="row-label">
+              <strong>Baseline</strong>
+              <span id="baselineProgressText">0 / 200 km</span>
+            </div>
+            <div class="track">
+              <div id="baselineBar" class="fill"></div>
+            </div>
+          </div>
+          <div class="telemetry-row optimized-row">
+            <div class="row-label">
+              <strong>Optimized</strong>
+              <span id="optimizedProgressText">0 / 239 km</span>
+            </div>
+            <div class="track">
+              <div id="optimizedBar" class="fill"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="map-attribution">Map data © OpenStreetMap contributors</div>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
