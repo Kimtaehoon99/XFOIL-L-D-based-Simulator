@@ -99,6 +99,7 @@ const dom = {
   playIcon: document.querySelector("#playIcon"),
   resetSim: document.querySelector("#resetSim"),
   resetView: document.querySelector("#resetView"),
+  mobileCameraFollow: document.querySelector("#mobileCameraFollow"),
   simStatus: document.querySelector("#simStatus"),
   aircraftName: document.querySelector("#aircraftName"),
   specRange: document.querySelector("#specRange"),
@@ -192,6 +193,13 @@ function isCompactViewport() {
 function setCameraFollow(enabled) {
   state.cameraFollow = enabled;
   dom.cameraFollow.checked = enabled;
+
+  if (dom.mobileCameraFollow) {
+    dom.mobileCameraFollow.textContent = enabled ? "추적 ON" : "추적 OFF";
+    dom.mobileCameraFollow.setAttribute("aria-pressed", String(enabled));
+    dom.mobileCameraFollow.setAttribute("aria-label", enabled ? "카메라 추적 끄기" : "카메라 추적 켜기");
+    dom.mobileCameraFollow.setAttribute("title", enabled ? "카메라 추적 끄기" : "카메라 추적 켜기");
+  }
 }
 
 function setupThree() {
@@ -1460,6 +1468,10 @@ function bindControls() {
 
   dom.cameraFollow.addEventListener("change", () => {
     setCameraFollow(dom.cameraFollow.checked);
+  });
+
+  dom.mobileCameraFollow?.addEventListener("click", () => {
+    setCameraFollow(!state.cameraFollow);
   });
 
   dom.showAirfoil.addEventListener("change", () => {
