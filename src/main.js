@@ -25,11 +25,12 @@ const MAP_CONFIG = {
   centerLat: 35.25,
   worldScale: 7.8,
   osmZoom: 6,
+  canvasWidth: 2304,
   bounds: {
-    west: 108.8,
-    east: 130.4,
-    south: 29.8,
-    north: 40.4
+    west: 85.0,
+    east: 140.0,
+    south: 5.0,
+    north: 65.0
   }
 };
 
@@ -285,8 +286,7 @@ function createOsmMapLayer() {
     new THREE.PlaneGeometry(Math.abs(east.x - west.x), Math.abs(south.z - north.z)),
     new THREE.MeshBasicMaterial({
       map: texture,
-      transparent: true,
-      opacity: 0.96,
+      transparent: false,
       depthWrite: false
     })
   );
@@ -303,7 +303,7 @@ function createFallbackMapCanvas() {
   const canvas = document.createElement("canvas");
   const worldWidth = (bounds.east - bounds.west) * MAP_CONFIG.worldScale;
   const worldHeight = (bounds.north - bounds.south) * MAP_CONFIG.worldScale;
-  canvas.width = 1280;
+  canvas.width = MAP_CONFIG.canvasWidth;
   canvas.height = Math.round(canvas.width * (worldHeight / worldWidth));
 
   const context = canvas.getContext("2d");
