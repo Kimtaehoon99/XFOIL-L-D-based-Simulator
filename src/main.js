@@ -1236,7 +1236,7 @@ function createAirfoilComparison() {
   airfoilCompareGroup.add(guide);
 
   addLabel("Baseline coords", new THREE.Vector3(41, 23.8, 28), colors.baseline, 4.7, scene);
-  addLabel(`KYfoil ${formatPercent(LD_STATS.gainPct)}`, new THREE.Vector3(41, 4.2, 28), colors.optimized, 4.7, scene);
+  addLabel(`KYfoil 3° ${formatPercent(LD_STATS.gainPct)}`, new THREE.Vector3(41, 4.2, 28), colors.optimized, 4.7, scene);
 }
 
 function makeAirfoilMesh(config, color) {
@@ -1598,8 +1598,8 @@ function updateMetrics() {
   dom.deltaRange.textContent = `+${formatKm(deltaKm)}`;
   dom.deltaEndurance.textContent = `Endurance +${formatDuration(optimizedEndurance - baselineEndurance)}`;
   dom.modelNote.textContent =
-    `Range = V × t. Baseline ${formatKm(state.baselineKm)}. ` +
-    "항로: 서울 → 서쪽 중국 방향.";
+    `Range = V × t. L/D 비교: AoA ${LD_STATS.comparisonAoa}° 기준. ` +
+    `Baseline ${formatKm(state.baselineKm)}. 항로: 서울 → 서쪽 중국 방향.`;
   dom.topBaseline.textContent = formatKm(state.baselineKm);
   dom.topOptimized.textContent = formatKm(optimizedKm);
   dom.topGain.textContent = formatPercent(state.gainPct);
@@ -1694,18 +1694,34 @@ function drawAirfoilSvg() {
   dom.airfoilSvg.appendChild(makeLdPath(LD_POLAR.baseline, mapX, mapY, "#50a7ff", 2.6));
   dom.airfoilSvg.appendChild(makeLdPath(LD_POLAR.optimized, mapX, mapY, "#e84134", 3));
 
-  const baselineMax = LD_STATS.baselineMax;
-  const optimizedMax = LD_STATS.optimizedMax;
-  dom.airfoilSvg.appendChild(makeSvgCircle(mapX(baselineMax.aoa), mapY(baselineMax.ld), 4.2, "#50a7ff"));
-  dom.airfoilSvg.appendChild(makeSvgCircle(mapX(optimizedMax.aoa), mapY(optimizedMax.ld), 4.6, "#e84134"));
+  const comparisonAoa = LD_STATS.comparisonAoa;
+  const baselineAtComparisonAoa = LD_STATS.baselineAtComparisonAoa;
+  const optimizedAtComparisonAoa = LD_STATS.optimizedAtComparisonAoa;
+  const comparisonLine = makeSvgLine(
+    mapX(comparisonAoa),
+    bounds.top,
+    mapX(comparisonAoa),
+    bounds.bottom,
+    "rgba(244,247,244,0.42)"
+  );
+  comparisonLine.setAttribute("stroke-dasharray", "4 4");
+
+  dom.airfoilSvg.appendChild(comparisonLine);
+  dom.airfoilSvg.appendChild(
+    makeSvgCircle(mapX(baselineAtComparisonAoa.aoa), mapY(baselineAtComparisonAoa.ld), 4.2, "#50a7ff")
+  );
+  dom.airfoilSvg.appendChild(
+    makeSvgCircle(mapX(optimizedAtComparisonAoa.aoa), mapY(optimizedAtComparisonAoa.ld), 4.6, "#e84134")
+  );
   dom.airfoilSvg.appendChild(makeSvgText("AoA", 307, 184, "rgba(244,247,244,0.8)", 11));
   dom.airfoilSvg.appendChild(makeSvgText("L/D", 12, 14, "rgba(244,247,244,0.8)", 11));
   dom.airfoilSvg.appendChild(
-    makeSvgText(`Base max ${baselineMax.ld.toFixed(1)} @ ${baselineMax.aoa.toFixed(2)}°`, 58, 36, "#50a7ff", 12)
+    makeSvgText(`Base 3° ${baselineAtComparisonAoa.ld.toFixed(1)}`, 58, 36, "#50a7ff", 12)
   );
   dom.airfoilSvg.appendChild(
-    makeSvgText(`Opt max ${optimizedMax.ld.toFixed(1)} @ ${optimizedMax.aoa.toFixed(1)}°`, 58, 54, "#e84134", 12)
+    makeSvgText(`Opt 3° ${optimizedAtComparisonAoa.ld.toFixed(1)}`, 58, 54, "#e84134", 12)
   );
+  dom.airfoilSvg.appendChild(makeSvgText(`${comparisonAoa}° 기준`, mapX(comparisonAoa) + 8, 137, "rgba(244,247,244,0.78)", 10));
 }
 
 function makeLdPath(points, mapX, mapY, stroke, strokeWidth) {

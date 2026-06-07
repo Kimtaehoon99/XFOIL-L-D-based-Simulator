@@ -66,9 +66,40 @@ export function getMaxLd(points) {
   return points.reduce((best, point) => (point.ld > best.ld ? point : best), points[0]);
 }
 
+export function getLdAtAoa(points, targetAoa) {
+  const sorted = [...points].sort((a, b) => a.aoa - b.aoa);
+  const exact = sorted.find((point) => Math.abs(point.aoa - targetAoa) < 1e-8);
+
+  if (exact) {
+    return { ...exact, interpolated: false };
+  }
+
+  const upperIndex = sorted.findIndex((point) => point.aoa > targetAoa);
+
+  if (upperIndex <= 0) {
+    throw new Error(`AoA ${targetAoa} is outside the L/D polar range.`);
+  }
+
+  const lower = sorted[upperIndex - 1];
+  const upper = sorted[upperIndex];
+  const ratio = (targetAoa - lower.aoa) / (upper.aoa - lower.aoa);
+
+  return {
+    aoa: targetAoa,
+    ld: lower.ld + (upper.ld - lower.ld) * ratio,
+    interpolated: true
+  };
+}
+
+export const LD_COMPARISON_AOA = 3;
+
 export const LD_STATS = {
   baselineMax: getMaxLd(LD_POLAR.baseline),
-  optimizedMax: getMaxLd(LD_POLAR.optimized)
+  optimizedMax: getMaxLd(LD_POLAR.optimized),
+  comparisonAoa: LD_COMPARISON_AOA,
+  baselineAtComparisonAoa: getLdAtAoa(LD_POLAR.baseline, LD_COMPARISON_AOA),
+  optimizedAtComparisonAoa: getLdAtAoa(LD_POLAR.optimized, LD_COMPARISON_AOA)
 };
 
-LD_STATS.gainPct = (LD_STATS.optimizedMax.ld / LD_STATS.baselineMax.ld - 1) * 100;
+LD_STATS.gainPct =
+  (LD_STATS.optimizedAtComparisonAoa.ld / LD_STATS.baselineAtComparisonAoa.ld - 1) * 100;
