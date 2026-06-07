@@ -255,8 +255,6 @@ function createWorld() {
   world.add(grid);
 
   createOsmMapLayer();
-  createMainland();
-  createIsland("제주", 126.53, 33.38, 4.7, 2.1, 0.55);
   createCityMarkers();
   createMapDetails();
   createCompass();
