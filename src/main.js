@@ -7,10 +7,7 @@ import { KYFOIL_COORDS } from "./kyfoilCoordinates.js";
 const AIRCRAFT_SPEC = {
   name: "Star-X VTOL-4910HP",
   dataLinkRangeLabel: "50-200 km",
-  cruiseMinKmh: 80,
   cruiseKmh: 100,
-  cruiseMaxKmh: 110,
-  maxSpeedKmh: 130,
   enduranceHours: 12,
   wingspanM: 4.91,
   lengthM: 2.84,
@@ -1627,8 +1624,8 @@ function updateMetrics() {
 
   document.title = `${AIRCRAFT_SPEC.name} 양항비 비교 시뮬레이터`;
   dom.aircraftName.textContent = AIRCRAFT_SPEC.name;
-  dom.specRange.textContent = formatKmRange(getMinCruiseRangeKm(), getMaxCruiseRangeKm());
-  dom.specCruise.textContent = `${AIRCRAFT_SPEC.cruiseMinKmh}-${AIRCRAFT_SPEC.cruiseMaxKmh} / ${AIRCRAFT_SPEC.maxSpeedKmh} km/h`;
+  dom.specRange.textContent = formatKm(state.baselineKm);
+  dom.specCruise.textContent = `${formatNumber(AIRCRAFT_SPEC.cruiseKmh)} km/h`;
   dom.specMtow.textContent = `${formatNumber(AIRCRAFT_SPEC.mtowKg)} kg`;
   dom.specEndurance.textContent = formatDuration(baselineEndurance);
   dom.specPayload.textContent = AIRCRAFT_SPEC.payloadLabel;
@@ -1638,7 +1635,8 @@ function updateMetrics() {
   dom.deltaRange.textContent = `+${formatKm(deltaKm)}`;
   dom.deltaEndurance.textContent = `Endurance +${formatDuration(optimizedEndurance - baselineEndurance)}`;
   dom.modelNote.textContent =
-    `Range = V × t. L/D 비교: AoA ${LD_STATS.comparisonAoa}° 기준. ` +
+    `Range = ${formatNumber(AIRCRAFT_SPEC.cruiseKmh)} km/h × ${AIRCRAFT_SPEC.enduranceHours} h. ` +
+    `L/D 비교: AoA ${LD_STATS.comparisonAoa}° 기준. ` +
     `Baseline ${formatKm(state.baselineKm)}. 항로: 서울 → 서쪽 중국 방향.`;
   dom.topBaseline.textContent = formatKm(state.baselineKm);
   dom.topOptimized.textContent = formatKm(optimizedKm);
@@ -1656,10 +1654,6 @@ function formatKm(value) {
   }
 
   return `${value.toFixed(1)} km`;
-}
-
-function formatKmRange(minValue, maxValue) {
-  return `${formatNumber(minValue)}-${formatNumber(maxValue)} km`;
 }
 
 function formatPercent(value) {
@@ -1684,14 +1678,6 @@ function getOptimizedKm() {
 
 function getBaselineKm() {
   return AIRCRAFT_SPEC.cruiseKmh * AIRCRAFT_SPEC.enduranceHours;
-}
-
-function getMinCruiseRangeKm() {
-  return AIRCRAFT_SPEC.cruiseMinKmh * AIRCRAFT_SPEC.enduranceHours;
-}
-
-function getMaxCruiseRangeKm() {
-  return AIRCRAFT_SPEC.cruiseMaxKmh * AIRCRAFT_SPEC.enduranceHours;
 }
 
 function getOptimizedEnduranceHours() {
