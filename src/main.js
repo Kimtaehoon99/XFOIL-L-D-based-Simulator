@@ -176,15 +176,7 @@ function syncInitialGainInputs() {
 }
 
 function syncInitialCameraMode() {
-  if (isCompactViewport()) {
-    setCameraFollow(false);
-  } else {
-    setCameraFollow(state.cameraFollow);
-  }
-}
-
-function isCompactViewport() {
-  return window.matchMedia("(max-width: 900px), (max-height: 640px), (pointer: coarse)").matches;
+  setCameraFollow(true);
 }
 
 function setCameraFollow(enabled) {
