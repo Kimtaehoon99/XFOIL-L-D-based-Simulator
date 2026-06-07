@@ -255,6 +255,7 @@ function createWorld() {
   world.add(grid);
 
   createOsmMapLayer();
+  createMountainRanges();
   createCityMarkers();
   createMapDetails();
   createCompass();
@@ -354,11 +355,12 @@ function createFallbackMapCanvas() {
 
   [
     ["서울", 126.98, 37.57],
+    ["인천", 126.63, 37.46],
     ["대전", 127.38, 36.35],
+    ["광주", 126.85, 35.16],
     ["대구", 128.6, 35.87],
     ["부산", 129.08, 35.18],
-    ["광주", 126.85, 35.16],
-    ["제주", 126.53, 33.38],
+    ["울산", 129.31, 35.54],
     ["베이징", 116.4, 39.9],
     ["톈진", 117.2, 39.1],
     ["칭다오", 120.38, 36.07],
@@ -627,13 +629,154 @@ function addMountainRidge() {
   });
 }
 
+function createMountainRanges() {
+  [
+    {
+      color: 0x78966f,
+      radius: 0.16,
+      peakEvery: 1,
+      points: [
+        [128.02, 38.18, 3.8],
+        [128.32, 37.64, 4.9],
+        [128.48, 37.08, 4.5],
+        [128.56, 36.45, 4.1],
+        [128.38, 35.86, 3.6],
+        [128.22, 35.34, 3.1]
+      ]
+    },
+    {
+      color: 0x6f8b65,
+      radius: 0.15,
+      peakEvery: 1,
+      points: [
+        [127.44, 36.9, 3.0],
+        [127.62, 36.38, 3.4],
+        [127.46, 35.84, 3.6],
+        [127.18, 35.34, 3.1],
+        [126.92, 34.88, 2.7]
+      ]
+    },
+    {
+      color: 0x8aa370,
+      radius: 0.15,
+      peakEvery: 1,
+      points: [
+        [126.42, 33.26, 2.2],
+        [126.53, 33.38, 3.2],
+        [126.72, 33.45, 2.4]
+      ]
+    },
+    {
+      color: 0x8d9d76,
+      radius: 0.24,
+      peakEvery: 1,
+      points: [
+        [116.2, 40.6, 4.2],
+        [115.0, 39.5, 5.0],
+        [113.9, 38.3, 5.5],
+        [112.7, 37.0, 5.1],
+        [111.8, 35.8, 4.4]
+      ]
+    },
+    {
+      color: 0x7d9368,
+      radius: 0.25,
+      peakEvery: 1,
+      points: [
+        [105.8, 34.4, 4.6],
+        [108.6, 34.2, 5.6],
+        [111.0, 33.8, 5.1],
+        [113.4, 33.2, 4.6],
+        [115.6, 32.2, 3.7]
+      ]
+    },
+    {
+      color: 0x7e9870,
+      radius: 0.2,
+      peakEvery: 1,
+      points: [
+        [121.0, 41.3, 3.6],
+        [122.2, 40.5, 4.3],
+        [123.5, 39.7, 4.0],
+        [124.7, 38.9, 3.5]
+      ]
+    },
+    {
+      color: 0x95aa78,
+      radius: 0.18,
+      peakEvery: 1,
+      points: [
+        [118.0, 36.7, 2.5],
+        [118.8, 36.4, 3.1],
+        [119.6, 36.0, 3.0],
+        [120.3, 35.5, 2.4]
+      ]
+    },
+    {
+      color: 0x8b9f72,
+      radius: 0.2,
+      peakEvery: 1,
+      points: [
+        [129.8, 32.8, 3.0],
+        [130.6, 33.4, 3.5],
+        [131.5, 34.0, 3.2],
+        [132.8, 34.6, 2.9],
+        [134.0, 35.0, 2.7]
+      ]
+    }
+  ].forEach(addMountainRange);
+}
+
+function addMountainRange({ points, color, radius = 0.18, peakEvery = 1 }) {
+  const ridgePoints = points.map(([lon, lat, height]) => {
+    const p = lonLatToWorld(lon, lat);
+    return new THREE.Vector3(p.x, 1.05 + height * 0.12, p.z);
+  });
+
+  const curve = new THREE.CatmullRomCurve3(ridgePoints, false, "catmullrom", 0.18);
+  const ridge = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, Math.max(36, points.length * 16), radius, 7, false),
+    new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.82,
+      metalness: 0.04,
+      transparent: true,
+      opacity: 0.86
+    })
+  );
+  ridge.castShadow = true;
+  ridge.receiveShadow = true;
+  world.add(ridge);
+
+  points.forEach(([lon, lat, height], index) => {
+    if (index % peakEvery !== 0) return;
+
+    const p = lonLatToWorld(lon, lat);
+    const peak = new THREE.Mesh(
+      new THREE.ConeGeometry(height * 0.46, height, 5),
+      new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.84,
+        metalness: 0.03
+      })
+    );
+    peak.position.set(p.x, 0.92 + height * 0.5, p.z);
+    peak.rotation.y = index * 0.73 + lon * 0.01;
+    peak.castShadow = true;
+    peak.receiveShadow = true;
+    world.add(peak);
+  });
+}
+
 function createCityMarkers() {
   [
     ["서울", 126.98, 37.57],
+    ["인천", 126.63, 37.46],
     ["대전", 127.38, 36.35],
+    ["광주", 126.85, 35.16],
     ["대구", 128.6, 35.87],
-    ["부산", 129.08, 35.18],
-    ["광주", 126.85, 35.16]
+    ["울산", 129.31, 35.54],
+    ["부산", 129.08, 35.18]
   ].forEach(([name, lon, lat]) => {
     const p = lonLatToWorld(lon, lat);
     const marker = new THREE.Mesh(
@@ -675,23 +818,6 @@ function createMapDetails() {
   ].forEach((river) => addGroundPolyline(river, riverColor, 0.05, 1.32, 0.82));
 
   [
-    ["서울", 126.98, 37.57, 5.6],
-    ["인천", 126.63, 37.46, 4.4],
-    ["수원", 127.03, 37.26, 4.2],
-    ["춘천", 127.73, 37.88, 4.2],
-    ["강릉", 128.9, 37.75, 4.4],
-    ["청주", 127.49, 36.64, 4.4],
-    ["대전", 127.38, 36.35, 5.0],
-    ["전주", 127.15, 35.82, 4.5],
-    ["광주", 126.85, 35.16, 5.0],
-    ["목포", 126.39, 34.81, 4.3],
-    ["대구", 128.6, 35.87, 5.0],
-    ["포항", 129.37, 36.03, 4.5],
-    ["울산", 129.31, 35.54, 4.4],
-    ["창원", 128.68, 35.23, 4.3],
-    ["부산", 129.08, 35.18, 5.2],
-    ["여수", 127.66, 34.76, 4.2],
-    ["제주", 126.53, 33.38, 4.5],
     ["베이징", 116.4, 39.9, 5.0],
     ["톈진", 117.2, 39.1, 4.6],
     ["다롄", 121.62, 38.92, 4.2],
