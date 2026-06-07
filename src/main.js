@@ -6,10 +6,11 @@ import { KYFOIL_COORDS } from "./kyfoilCoordinates.js";
 
 const AIRCRAFT_SPEC = {
   name: "Star-X VTOL-4910HP",
-  rangeKm: 200,
-  rangeLabel: "50-200 km",
+  dataLinkRangeLabel: "50-200 km",
+  cruiseMinKmh: 80,
   cruiseKmh: 100,
-  cruiseLabel: "80-110 / 130 km/h",
+  cruiseMaxKmh: 110,
+  maxSpeedKmh: 130,
   enduranceHours: 12,
   wingspanM: 4.91,
   lengthM: 2.84,
@@ -20,15 +21,15 @@ const AIRCRAFT_SPEC = {
 };
 
 const MAP_CONFIG = {
-  centerLon: 127.72,
-  centerLat: 36.0,
-  worldScale: 24,
-  osmZoom: 8,
+  centerLon: 130.6,
+  centerLat: 33.55,
+  worldScale: 13.5,
+  osmZoom: 7,
   bounds: {
-    west: 125.45,
-    east: 129.82,
-    south: 33.05,
-    north: 38.75
+    west: 125.15,
+    east: 135.85,
+    south: 26.35,
+    north: 38.85
   }
 };
 
@@ -65,7 +66,7 @@ const KOREA_MAINLAND_LON_LAT = [
 ];
 
 const state = {
-  baselineKm: AIRCRAFT_SPEC.rangeKm,
+  baselineKm: getBaselineKm(),
   gainPct: LD_STATS.gainPct,
   speed: 1,
   paused: false,
@@ -91,6 +92,7 @@ const dom = {
   specMtow: document.querySelector("#specMtow"),
   specEndurance: document.querySelector("#specEndurance"),
   specPayload: document.querySelector("#specPayload"),
+  specDatalink: document.querySelector("#specDatalink"),
   specSize: document.querySelector("#specSize"),
   specPropulsion: document.querySelector("#specPropulsion"),
   deltaRange: document.querySelector("#deltaRange"),
@@ -218,8 +220,9 @@ function createWorld() {
   world = new THREE.Group();
   scene.add(world);
 
+  const mapSpan = getMapWorldSpan();
   const water = new THREE.Mesh(
-    new THREE.PlaneGeometry(154, 174, 1, 1),
+    new THREE.PlaneGeometry(mapSpan.width + 64, mapSpan.height + 64, 1, 1),
     new THREE.MeshStandardMaterial({
       color: colors.water,
       roughness: 0.76,
@@ -231,7 +234,7 @@ function createWorld() {
   water.receiveShadow = true;
   world.add(water);
 
-  const grid = new THREE.GridHelper(154, 24, 0xc4d3cd, 0x8ba29a);
+  const grid = new THREE.GridHelper(Math.max(mapSpan.width, mapSpan.height) + 54, 28, 0xc4d3cd, 0x8ba29a);
   grid.position.y = -2.48;
   grid.material.opacity = 0.12;
   grid.material.transparent = true;
@@ -243,6 +246,14 @@ function createWorld() {
   createCityMarkers();
   createMapDetails();
   createCompass();
+}
+
+function getMapWorldSpan() {
+  const bounds = MAP_CONFIG.bounds;
+  return {
+    width: (bounds.east - bounds.west) * MAP_CONFIG.worldScale,
+    height: (bounds.north - bounds.south) * MAP_CONFIG.worldScale
+  };
 }
 
 function createOsmMapLayer() {
@@ -1426,20 +1437,20 @@ function updateMetrics() {
 
   document.title = `${AIRCRAFT_SPEC.name} 양항비 비교 시뮬레이터`;
   dom.aircraftName.textContent = AIRCRAFT_SPEC.name;
-  dom.specRange.textContent = AIRCRAFT_SPEC.rangeLabel;
-  dom.specCruise.textContent = AIRCRAFT_SPEC.cruiseLabel;
+  dom.specRange.textContent = formatKmRange(getMinCruiseRangeKm(), getMaxCruiseRangeKm());
+  dom.specCruise.textContent = `${AIRCRAFT_SPEC.cruiseMinKmh}-${AIRCRAFT_SPEC.cruiseMaxKmh} / ${AIRCRAFT_SPEC.maxSpeedKmh} km/h`;
   dom.specMtow.textContent = `${formatNumber(AIRCRAFT_SPEC.mtowKg)} kg`;
   dom.specEndurance.textContent = formatDuration(baselineEndurance);
   dom.specPayload.textContent = AIRCRAFT_SPEC.payloadLabel;
+  dom.specDatalink.textContent = AIRCRAFT_SPEC.dataLinkRangeLabel;
   dom.specSize.textContent = `W ${AIRCRAFT_SPEC.wingspanM.toFixed(2)} m / L ${AIRCRAFT_SPEC.lengthM.toFixed(2)} m`;
   dom.specPropulsion.textContent = AIRCRAFT_SPEC.propulsionLabel;
   dom.deltaRange.textContent = `+${formatKm(deltaKm)}`;
   dom.deltaEndurance.textContent = `Endurance +${formatDuration(optimizedEndurance - baselineEndurance)}`;
   dom.modelNote.textContent =
-    `${AIRCRAFT_SPEC.sourceLabel} 기준: 최대 Endurance ${formatDuration(AIRCRAFT_SPEC.enduranceHours)}, ` +
-    `비행/항속거리 ${AIRCRAFT_SPEC.rangeLabel}, 순항/최고 속도 ${AIRCRAFT_SPEC.cruiseLabel}. ` +
-    `엑셀 최대 L/D는 Baseline ${LD_STATS.baselineMax.ld.toFixed(1)}, Optimized ${LD_STATS.optimizedMax.ld.toFixed(1)}이며, ` +
-    "항로는 서울에서 부산 방위로 비행하는 직선거리 기준입니다.";
+    `Range = V × t. ${AIRCRAFT_SPEC.cruiseMinKmh}-${AIRCRAFT_SPEC.cruiseMaxKmh} km/h × ` +
+    `${AIRCRAFT_SPEC.enduranceHours} h → ${formatKmRange(getMinCruiseRangeKm(), getMaxCruiseRangeKm())}. ` +
+    `Baseline은 대표 ${formatNumber(AIRCRAFT_SPEC.cruiseKmh)} km/h 기준 ${formatKm(state.baselineKm)}.`;
   dom.topBaseline.textContent = formatKm(state.baselineKm);
   dom.topOptimized.textContent = formatKm(optimizedKm);
   dom.topGain.textContent = formatPercent(state.gainPct);
@@ -1456,6 +1467,10 @@ function formatKm(value) {
   }
 
   return `${value.toFixed(1)} km`;
+}
+
+function formatKmRange(minValue, maxValue) {
+  return `${formatNumber(minValue)}-${formatNumber(maxValue)} km`;
 }
 
 function formatPercent(value) {
@@ -1476,6 +1491,18 @@ function formatDuration(hours) {
 
 function getOptimizedKm() {
   return state.baselineKm * (1 + state.gainPct / 100);
+}
+
+function getBaselineKm() {
+  return AIRCRAFT_SPEC.cruiseKmh * AIRCRAFT_SPEC.enduranceHours;
+}
+
+function getMinCruiseRangeKm() {
+  return AIRCRAFT_SPEC.cruiseMinKmh * AIRCRAFT_SPEC.enduranceHours;
+}
+
+function getMaxCruiseRangeKm() {
+  return AIRCRAFT_SPEC.cruiseMaxKmh * AIRCRAFT_SPEC.enduranceHours;
 }
 
 function getOptimizedEnduranceHours() {
