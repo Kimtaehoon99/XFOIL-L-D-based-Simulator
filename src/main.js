@@ -21,17 +21,30 @@ const AIRCRAFT_SPEC = {
 };
 
 const MAP_CONFIG = {
-  centerLon: 130.6,
-  centerLat: 33.55,
-  worldScale: 13.5,
-  osmZoom: 7,
+  centerLon: 119.85,
+  centerLat: 35.25,
+  worldScale: 7.8,
+  osmZoom: 6,
   bounds: {
-    west: 125.15,
-    east: 135.85,
-    south: 26.35,
-    north: 38.85
+    west: 108.8,
+    east: 130.4,
+    south: 29.8,
+    north: 40.4
   }
 };
+
+const CHINA_EAST_COAST_LON_LAT = [
+  [124.2, 39.6],
+  [121.6, 39.0],
+  [120.5, 37.8],
+  [119.1, 37.2],
+  [120.5, 36.0],
+  [120.8, 35.3],
+  [119.3, 34.7],
+  [120.1, 33.0],
+  [121.6, 31.2],
+  [122.1, 30.2]
+];
 
 const KOREA_MAINLAND_LON_LAT = [
   [126.15, 38.56],
@@ -303,6 +316,21 @@ function createFallbackMapCanvas() {
   coastGradient.addColorStop(0, "#e8ecd9");
   coastGradient.addColorStop(0.42, "#cce8c8");
   coastGradient.addColorStop(1, "#a8d3b5");
+
+  const chinaPoints = [
+    [bounds.west, bounds.north],
+    [CHINA_EAST_COAST_LON_LAT[0][0], bounds.north],
+    ...CHINA_EAST_COAST_LON_LAT,
+    [CHINA_EAST_COAST_LON_LAT.at(-1)[0], bounds.south],
+    [bounds.west, bounds.south]
+  ].map(([lon, lat]) => toCanvas(lon, lat));
+  context.fillStyle = coastGradient;
+  drawCanvasPolygon(context, chinaPoints);
+  context.fill();
+  context.strokeStyle = "rgba(72, 107, 96, 0.58)";
+  context.lineWidth = 3;
+  context.stroke();
+
   context.fillStyle = coastGradient;
   drawCanvasPolygon(context, KOREA_MAINLAND_LON_LAT.map(([lon, lat]) => toCanvas(lon, lat)));
   context.fill();
@@ -332,7 +360,11 @@ function createFallbackMapCanvas() {
     ["대구", 128.6, 35.87],
     ["부산", 129.08, 35.18],
     ["광주", 126.85, 35.16],
-    ["제주", 126.53, 33.38]
+    ["제주", 126.53, 33.38],
+    ["베이징", 116.4, 39.9],
+    ["톈진", 117.2, 39.1],
+    ["칭다오", 120.38, 36.07],
+    ["상하이", 121.47, 31.23]
   ].forEach(([name, lon, lat]) => drawCanvasCityLabel(context, name, lon, lat, canvas));
 
   return canvas;
@@ -1148,8 +1180,7 @@ function routePoint(lon, lat, altitude) {
 
 function makeStraightRouteFromSeoul(distanceKm) {
   const start = { lon: 126.98, lat: 37.57 };
-  const busan = { lon: 129.08, lat: 35.18 };
-  const bearingDeg = bearingBetween(start.lon, start.lat, busan.lon, busan.lat);
+  const bearingDeg = 270;
   const segments = 8;
   const points = [];
 
@@ -1160,20 +1191,6 @@ function makeStraightRouteFromSeoul(distanceKm) {
   }
 
   return points;
-}
-
-function bearingBetween(lon1Deg, lat1Deg, lon2Deg, lat2Deg) {
-  const lon1 = THREE.MathUtils.degToRad(lon1Deg);
-  const lat1 = THREE.MathUtils.degToRad(lat1Deg);
-  const lon2 = THREE.MathUtils.degToRad(lon2Deg);
-  const lat2 = THREE.MathUtils.degToRad(lat2Deg);
-  const deltaLon = lon2 - lon1;
-  const y = Math.sin(deltaLon) * Math.cos(lat2);
-  const x =
-    Math.cos(lat1) * Math.sin(lat2) -
-    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
-
-  return (THREE.MathUtils.radToDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
 function destinationPoint(lonDeg, latDeg, bearingDeg, distanceKm) {
@@ -1448,9 +1465,8 @@ function updateMetrics() {
   dom.deltaRange.textContent = `+${formatKm(deltaKm)}`;
   dom.deltaEndurance.textContent = `Endurance +${formatDuration(optimizedEndurance - baselineEndurance)}`;
   dom.modelNote.textContent =
-    `Range = V × t. ${AIRCRAFT_SPEC.cruiseMinKmh}-${AIRCRAFT_SPEC.cruiseMaxKmh} km/h × ` +
-    `${AIRCRAFT_SPEC.enduranceHours} h → ${formatKmRange(getMinCruiseRangeKm(), getMaxCruiseRangeKm())}. ` +
-    `Baseline은 대표 ${formatNumber(AIRCRAFT_SPEC.cruiseKmh)} km/h 기준 ${formatKm(state.baselineKm)}.`;
+    `Range = V × t. Baseline ${formatKm(state.baselineKm)}. ` +
+    "항로: 서울 → 서쪽 중국 방향.";
   dom.topBaseline.textContent = formatKm(state.baselineKm);
   dom.topOptimized.textContent = formatKm(optimizedKm);
   dom.topGain.textContent = formatPercent(state.gainPct);
