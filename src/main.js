@@ -165,6 +165,7 @@ function init() {
   buildRoutes();
   drawAirfoilSvg();
   syncInitialGainInputs();
+  syncInitialCameraMode();
   bindControls();
   updateMetrics();
   renderer.setAnimationLoop(animate);
@@ -174,6 +175,23 @@ function syncInitialGainInputs() {
   const value = state.gainPct.toFixed(1);
   dom.gainRange.value = value;
   dom.gainNumber.value = value;
+}
+
+function syncInitialCameraMode() {
+  if (isCompactViewport()) {
+    setCameraFollow(false);
+  } else {
+    setCameraFollow(state.cameraFollow);
+  }
+}
+
+function isCompactViewport() {
+  return window.matchMedia("(max-width: 900px), (max-height: 640px), (pointer: coarse)").matches;
+}
+
+function setCameraFollow(enabled) {
+  state.cameraFollow = enabled;
+  dom.cameraFollow.checked = enabled;
 }
 
 function setupThree() {
@@ -202,10 +220,20 @@ function setupThree() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
+  controls.enablePan = true;
+  controls.zoomToCursor = true;
+  controls.screenSpacePanning = false;
+  controls.touches.ONE = THREE.TOUCH.ROTATE;
+  controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
   controls.maxPolarAngle = Math.PI * 0.48;
-  controls.minDistance = 52;
+  controls.minDistance = 34;
   controls.maxDistance = 340;
   controls.target.set(-12, 0, 4);
+  controls.addEventListener("start", () => {
+    setCameraFollow(false);
+  });
 
   const hemi = new THREE.HemisphereLight(0xf4fbff, 0x375a46, 2.4);
   scene.add(hemi);
@@ -1431,7 +1459,7 @@ function bindControls() {
   });
 
   dom.cameraFollow.addEventListener("change", () => {
-    state.cameraFollow = dom.cameraFollow.checked;
+    setCameraFollow(dom.cameraFollow.checked);
   });
 
   dom.showAirfoil.addEventListener("change", () => {
